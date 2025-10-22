@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import ChatItem from "./ChatItem";
+import PoolItem from "./PoolItem";
 
 const PoolList = ({ user, isConnected: propIsConnected, list }) => {
   const [isConnected, setIsConnected] = useState(propIsConnected);
@@ -31,8 +31,8 @@ const PoolList = ({ user, isConnected: propIsConnected, list }) => {
       </div>
       <div className="px-6 py-4">
         <div className="space-y-2">
-          {[...list.values()].map((chat) => (
-            (chat.id !== user.id) && <ChatItem key={chat.id} user={chat} />
+          {[...list.values()].map((targetUser) => (
+            (targetUser.id !== user.id) && <PoolItem key={targetUser.id} user={user} targetUser={targetUser} />
           ))}
         </div>
       </div>

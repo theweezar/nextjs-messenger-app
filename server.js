@@ -79,9 +79,11 @@ app.prepare().then(() => {
     socket.on("message:send", (newMessage) => {
       const { fromId, toId, message } = newMessage;
       const toUser = pool.get(toId);
-      if (toUser) {
+      const fromUser = pool.get(fromId);
+      if (fromUser && toUser) {
         ClientLog.info(`message:send from=${fromId} to=${toId} socketId=${toUser.socketId} message=${message}`);
         io.to(toUser.socketId).emit("message:receive", newMessage);
+        io.to(fromUser.socketId).emit("message:send:after", newMessage);
       }
     });
   });

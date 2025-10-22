@@ -37,7 +37,7 @@ export default function PoolWrapper({ Child }) {
         });
       },
       "user:register:after": (user) => {
-        ClientLog.info("registered:", user);
+        PoolLog.info("registered:", user);
         setStateUser(() => ({ ...user }));
         emit("pool:sync");
       }

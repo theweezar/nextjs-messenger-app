@@ -1,6 +1,6 @@
 import "./globals.css";
 import { AppProvider } from "./AppContext";
-import { cookies } from "next/headers";
+import { getServerUserCookie } from "./cookie";
 
 export const metadata = {
   title: "Messenger App",
@@ -8,16 +8,7 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  let cookieUser = null;
-
-  try {
-    const cookieStore = await cookies();
-    cookieUser = cookieStore.get("user");
-    cookieUser = cookieUser ? JSON.parse(cookieUser.value) : null;
-  } catch (error) {
-    cookieUser = null;
-    console.error("Error parsing user cookie:", error);
-  }
+  let cookieUser = await getServerUserCookie();
 
   console.log(`[LAYOUT] username=${cookieUser ? cookieUser.username : 'guest'} id=${cookieUser ? cookieUser.id : 'N/A'}`);
 

@@ -1,19 +1,16 @@
-import Cookies from "js-cookie";
+"use server";
 
-export const getUserCookie = () => {
-  const userCookie = Cookies.get("user");
+import { cookies } from "next/headers";
+
+export const getServerUserCookie = async () => {
+  let cookieUser = null;
   try {
-    if (userCookie) return JSON.parse(userCookie);
+    const cookieStore = await cookies();
+    cookieUser = cookieStore.get("user");
+    cookieUser = cookieUser ? JSON.parse(cookieUser.value) : null;
   } catch (error) {
+    cookieUser = null;
     console.error("Error parsing user cookie:", error);
   }
-  return null;
-};
-
-export const setUserCookie = (user) => {
-  Cookies.set("user", JSON.stringify(user), { expires: 7 });
-};
-
-export const removeUserCookie = () => {
-  Cookies.remove("user");
+  return cookieUser;
 };

@@ -2,20 +2,41 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { getUserCookie } from "../../cookie";
 import { getAvatarColor, getInitials } from '@/app/components/helpers';
 import { ClientLog } from "@/scripts/log";
 import { socket, emit, on, off } from '@/app/components/socket';
+import { pushMessageToLocalStorage, getMessagesFromLocalStorage } from '@/app/components/storage';
+import { flat } from '@/app/components/object';
 import moment from 'moment';
 import Link from 'next/link';
 
-export default function DirectMessage({ user: propUser }) {
+export default function DirectMessage({ user: sendUser }) {
   const params = useParams();
   const messagesRef = useRef('');
-  const [stateUser, setStateUser] = useState(propUser || getUserCookie() || {});
+
+  // stateUser is sender
+  const [stateUser, setStateUser] = useState(sendUser);
   const [targetUser, setTargetUser] = useState({});
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+
+  const bottomRef = useRef(null);
+  const scrollToBottom = () => {
+    setTimeout(() => {
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  // Load messages from local storage on component mount
+  useEffect(() => {
+    if (stateUser.id && targetUser.id) {
+      const data = getMessagesFromLocalStorage(stateUser.id, targetUser.id);
+      setMessages((currMsgs) => (data && Array.isArray(data.messages)) ? data.messages : currMsgs);
+      scrollToBottom();
+    }
+  }, [stateUser]);
 
   useEffect(() => {
     setIsConnected(socket.connected);
@@ -23,18 +44,24 @@ export default function DirectMessage({ user: propUser }) {
     if (!isConnected) return;
 
     const socketEvents = {
-      "user:connect:after": ({ user: reqUser }) => {
-        if (!reqUser) return;
-        setTargetUser({ ...reqUser, isOnline: true });
-        ClientLog.info("connected to:", reqUser);
+      "user:connect:after": ({ user: targetUser }) => {
+        ClientLog.info("init target in DM:", flat(targetUser));
+        if (targetUser) {
+          setTargetUser({ ...targetUser, isOnline: true });
+        }
       },
       "user:register:after": (user) => {
-        ClientLog.info("registered DM:", user);
+        ClientLog.info("init sender in DM:", flat(user));
         setStateUser(() => ({ ...user }));
       },
       "message:receive": (newMessage) => {
-        ClientLog.info("msg receive:", newMessage);
         setMessages((prevMessages) => [...prevMessages, newMessage]);
+        pushMessageToLocalStorage(newMessage); // save to receiver's local storage
+      },
+      "message:send:after": (newMessage) => {
+        setMessages((currMsgs) => [...currMsgs, newMessage]);
+        pushMessageToLocalStorage(newMessage); // save to sender's local storage
+        scrollToBottom();
       },
       "pool:remove": (user) => {
         setTargetUser((prevTarget) => user.id === prevTarget.id
@@ -64,9 +91,7 @@ export default function DirectMessage({ user: propUser }) {
         message: messagesRef.current.value,
         timestamp: Date.now()
       };
-      ClientLog.info("msg send:", newMessage);
       emit("message:send", newMessage);
-      setMessages([...messages, newMessage]);
       messagesRef.current.value = '';
     }
   };
@@ -131,7 +156,7 @@ export default function DirectMessage({ user: propUser }) {
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 max-w-4xl mx-auto w-full">
-        <div className="space-y-4">
+        <div className="space-y-4" id="messagesContainer">
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -151,6 +176,7 @@ export default function DirectMessage({ user: propUser }) {
               </div>
             </div>
           ))}
+          <div className="scroll-anchor" ref={bottomRef}></div>
         </div>
       </div>
 
