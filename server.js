@@ -51,10 +51,12 @@ app.prepare().then(() => {
 
     socket.on("user:register", (newUser) => {
       const { username, id } = newUser;
+      const online = true;
+      
       let user = pool.get(id);
-      user = (user === undefined)
-        ? { username, socketId: socket.id, id }
-        : { ...user, socketId: socket.id, id };
+      user = !user
+        ? { username, socketId: socket.id, id, online }
+        : { ...user, socketId: socket.id, id, online };
 
       pool.set(id, user);
       socketToUser.set(user.socketId, id);
@@ -62,7 +64,6 @@ app.prepare().then(() => {
       PoolLog.info(`User registered: username=${username}, socketId=${socket.id}`);
       PoolLog.info(`Pool size: ${pool.size}`);
 
-      user = pool.get(id);
       socket.broadcast.emit("pool:add", { user, broadcast: true });
       socket.emit("user:register:after", user);
     });
@@ -72,8 +73,7 @@ app.prepare().then(() => {
     });
 
     socket.on("user:connect", ({ id }) => {
-      const userToConnect = pool.get(id);
-      socket.emit("user:connect:after", { user: userToConnect });
+      socket.emit("user:connect:after", { user: pool.get(id) });
     });
 
     socket.on("message:send", (newMessage) => {

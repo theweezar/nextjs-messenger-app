@@ -13,11 +13,10 @@ import {
 import Link from "next/link";
 import moment from 'moment';
 
-const PoolTarget = ({ user, targetUser: _targetUser }) => {
+const PoolTarget = ({ targetUser: _targetUser }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   // stateUser is the sender user
-  const [stateUser, setStateUser] = useState({ ...user });
   const [targetUser, setTargetUser] = useState({ ..._targetUser });
   const [unreadCount, setUnreadCount] = useState(0);
   const [lastMessage, setLastMessage] = useState(null);
@@ -43,8 +42,8 @@ const PoolTarget = ({ user, targetUser: _targetUser }) => {
 
     const socketEvents = {
       "message:receive": (newMessage) => {
-        PoolLog.info("msg receive:", newMessage);
         if (newMessage.fromId === targetUser.id) {
+          PoolLog.info("msg receive:", newMessage);
           setUnreadCount((count) => count + 1);
           setLastMessage({
             message: newMessage.message,
@@ -52,6 +51,20 @@ const PoolTarget = ({ user, targetUser: _targetUser }) => {
           });
           setTrigger(Date.now());
           pushMessageToLocalStorage(newMessage);
+        }
+      },
+      "pool:add": ({ user }) => {
+        if (user.id === targetUser.id) {
+          setTargetUser({ ...user, online: true });
+        }
+      },
+      "pool:remove": (user) => {
+        if (user.id === targetUser.id) {
+          setTargetUser((curr) => ({
+            ...curr,
+            online: false,
+            socketId: null
+          }));
         }
       }
     };
@@ -106,7 +119,7 @@ const PoolTarget = ({ user, targetUser: _targetUser }) => {
           {getInitials(targetUser.username)}
         </div>
         {/* Online status indicator */}
-        {targetUser.isOnline && (
+        {targetUser.online && (
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
         )}
       </div>

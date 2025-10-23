@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { getAvatarColor, getInitials } from '@/app/components/helpers';
 import { ClientLog } from "@/scripts/log";
 import { socket, emit, on, off } from '@/app/components/socket';
-import { pushMessageToLocalStorage, getMessagesFromLocalStorage, pushLastToPoolInLocalStorage } from '@/app/components/storage';
+import { pushMessageToLocalStorage, getMessagesFromLocalStorage, pushLastToPoolInLocalStorage, getLastInPoolFromLocalStorage } from '@/app/components/storage';
 import { flat } from '@/app/components/object';
 import moment from 'moment';
 import Link from 'next/link';
@@ -39,7 +39,16 @@ export default function DirectMessage() {
       "user:connect:after": ({ user: _targetUser }) => {
         ClientLog.info("init target in DM:", flat(_targetUser));
         if (_targetUser) {
-          setTargetUser({ ..._targetUser, isOnline: true });
+          setTargetUser({ ..._targetUser, online: true });
+          return;
+        }
+
+        const offlineData = getLastInPoolFromLocalStorage(params.id);
+        if (offlineData) {
+          setTargetUser({
+            id: params.id,
+            username: offlineData.username
+          });
         }
       },
       "user:register:after": (user) => {
@@ -65,11 +74,11 @@ export default function DirectMessage() {
       },
       "pool:remove": (user) => {
         setTargetUser((prevTarget) => user.id === prevTarget.id
-          ? { ...prevTarget, isOnline: false } : prevTarget);
+          ? { ...prevTarget, online: false } : prevTarget);
       },
       "pool:add": ({ user }) => {
         setTargetUser((prevTarget) => user.id === prevTarget.id
-          ? { ...user, isOnline: true } : prevTarget);
+          ? { ...user, online: true } : prevTarget);
       }
     }
 
@@ -140,7 +149,7 @@ export default function DirectMessage() {
                 className={`w-10 h-10 rounded-full ${getAvatarColor(targetUser.username)} flex items-center justify-center text-white font-bold font-['Inter',sans-serif] text-sm`}>
                 {getInitials(targetUser.username)}
               </div>
-              {targetUser.isOnline && (
+              {targetUser.online && (
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
               )}
             </div>
@@ -151,7 +160,7 @@ export default function DirectMessage() {
                 {targetUser.username}
               </h1>
               <p className="text-violet-100 text-xs font-['Inter',sans-serif]">
-                {targetUser.isOnline ? 'Online' : 'Last seen recently'}
+                {targetUser.online ? 'Online' : 'Last seen recently'}
               </p>
             </div>
           </div>
@@ -210,7 +219,8 @@ export default function DirectMessage() {
               <input
                 type="text"
                 ref={messagesRef}
-                placeholder="Type a message..."
+                placeholder={targetUser.online ? "Type a message..." : "User is offline..."}
+                disabled={!targetUser.online}
                 name="message"
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent font-['Inter',sans-serif] text-sm"
               />
@@ -220,6 +230,7 @@ export default function DirectMessage() {
             <button
               type="submit"
               className="p-3 bg-violet-500 hover:bg-violet-600 text-white rounded-full transition-colors flex items-center justify-center"
+              disabled={!targetUser.online}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
