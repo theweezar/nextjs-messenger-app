@@ -5,20 +5,21 @@ import { useParams } from 'next/navigation';
 import { getAvatarColor, getInitials } from '@/app/components/helpers';
 import { ClientLog } from "@/scripts/log";
 import { socket, emit, on, off } from '@/app/components/socket';
-import { pushMessageToLocalStorage, getMessagesFromLocalStorage } from '@/app/components/storage';
+import { pushMessageToLocalStorage, getMessagesFromLocalStorage, pushLastToPoolInLocalStorage } from '@/app/components/storage';
 import { flat } from '@/app/components/object';
 import moment from 'moment';
 import Link from 'next/link';
 
-export default function DirectMessage({ user: sendUser }) {
+export default function DirectMessage() {
   const params = useParams();
   const messagesRef = useRef('');
 
   // stateUser is sender
-  const [stateUser, setStateUser] = useState(sendUser);
+  const [stateUser, setStateUser] = useState({});
   const [targetUser, setTargetUser] = useState({});
   const [messages, setMessages] = useState([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [lastMessage, setLastMessage] = useState(null);
 
   const bottomRef = useRef(null);
   const scrollToBottom = () => {
@@ -29,25 +30,16 @@ export default function DirectMessage({ user: sendUser }) {
     }, 100);
   };
 
-  // Load messages from local storage on component mount
-  useEffect(() => {
-    if (stateUser.id && targetUser.id) {
-      const data = getMessagesFromLocalStorage(stateUser.id, targetUser.id);
-      setMessages((currMsgs) => (data && Array.isArray(data.messages)) ? data.messages : currMsgs);
-      scrollToBottom();
-    }
-  }, [stateUser]);
-
   useEffect(() => {
     setIsConnected(socket.connected);
 
     if (!isConnected) return;
 
     const socketEvents = {
-      "user:connect:after": ({ user: targetUser }) => {
-        ClientLog.info("init target in DM:", flat(targetUser));
-        if (targetUser) {
-          setTargetUser({ ...targetUser, isOnline: true });
+      "user:connect:after": ({ user: _targetUser }) => {
+        ClientLog.info("init target in DM:", flat(_targetUser));
+        if (_targetUser) {
+          setTargetUser({ ..._targetUser, isOnline: true });
         }
       },
       "user:register:after": (user) => {
@@ -55,13 +47,21 @@ export default function DirectMessage({ user: sendUser }) {
         setStateUser(() => ({ ...user }));
       },
       "message:receive": (newMessage) => {
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        setMessages((currMsgs) => [...currMsgs, newMessage]);
         pushMessageToLocalStorage(newMessage); // save to receiver's local storage
+        setLastMessage({
+          message: newMessage.message,
+          timestamp: newMessage.timestamp
+        });
       },
       "message:send:after": (newMessage) => {
         setMessages((currMsgs) => [...currMsgs, newMessage]);
-        pushMessageToLocalStorage(newMessage); // save to sender's local storage
         scrollToBottom();
+        pushMessageToLocalStorage(newMessage); // save to sender's local storage
+        setLastMessage({
+          message: newMessage.message,
+          timestamp: newMessage.timestamp
+        });
       },
       "pool:remove": (user) => {
         setTargetUser((prevTarget) => user.id === prevTarget.id
@@ -81,6 +81,27 @@ export default function DirectMessage({ user: sendUser }) {
       off(socketEvents);
     };
   }, [isConnected]);
+
+  // Load messages from local storage on component mount
+  useEffect(() => {
+    if (stateUser.id && targetUser.id) {
+      const data = getMessagesFromLocalStorage(stateUser.id, targetUser.id);
+      setMessages((currMsgs) => (data && Array.isArray(data.messages)) ? data.messages : currMsgs);
+      scrollToBottom();
+    }
+  }, [stateUser]);
+
+  // Save last message of both to both sides' pools
+  useEffect(() => {
+    if (lastMessage != null && targetUser.id) {
+      pushLastToPoolInLocalStorage({
+        id: targetUser.id,
+        username: targetUser.username,
+        message: lastMessage.message,
+        timestamp: lastMessage.timestamp
+      }, true);
+    }
+  }, [lastMessage]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();

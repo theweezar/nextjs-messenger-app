@@ -4,40 +4,54 @@ import { useState, useEffect } from 'react';
 import { socket, on, off } from '@/app/components/socket';
 import { PoolLog } from '@/scripts/log';
 import { getInitials, getAvatarColor } from "@/app/components/helpers";
-import { pushMessageToLocalStorage, getMessagesFromLocalStorage, updateUnreadCountInLocalStorage } from '@/app/components/storage';
+import {
+  pushMessageToLocalStorage,
+  resetUnreadCountInLocalStorage,
+  getLastInPoolFromLocalStorage,
+  pushLastToPoolInLocalStorage
+} from '@/app/components/storage';
 import Link from "next/link";
+import moment from 'moment';
 
-const PoolItem = ({ user, targetUser: _targetUser }) => {
+const PoolTarget = ({ user, targetUser: _targetUser }) => {
   const [isConnected, setIsConnected] = useState(false);
 
   // stateUser is the sender user
   const [stateUser, setStateUser] = useState({ ...user });
   const [targetUser, setTargetUser] = useState({ ..._targetUser });
   const [unreadCount, setUnreadCount] = useState(0);
-  const [lastMessage, setLastMessage] = useState('');
+  const [lastMessage, setLastMessage] = useState(null);
+  const [trigger, setTrigger] = useState(0); // to force re-render
 
+  // Render last message and unread count on load
   useEffect(() => {
-    if (stateUser.id) {
-      const data = getMessagesFromLocalStorage(stateUser.id, targetUser.id);
+    if (targetUser.id) {
+      const data = getLastInPoolFromLocalStorage(targetUser.id);
       setUnreadCount(data.unreadCount || 0);
-      setLastMessage(data.lastMessage || '');
+      setLastMessage({
+        message: data.lastMessage || '',
+        timestamp: data.lastTimestamp || null
+      });
     }
-  }, [stateUser]);
+  }, [targetUser]);
 
+  // Listen for incoming messages
   useEffect(() => {
     setIsConnected(socket.connected);
+
     if (!isConnected) return;
 
     const socketEvents = {
       "message:receive": (newMessage) => {
         PoolLog.info("msg receive:", newMessage);
         if (newMessage.fromId === targetUser.id) {
-          setUnreadCount((count) => {
-            const newCount = count + 1;
-            pushMessageToLocalStorage(newMessage, newCount);
-            return newCount;
+          setUnreadCount((count) => count + 1);
+          setLastMessage({
+            message: newMessage.message,
+            timestamp: newMessage.timestamp
           });
-          setLastMessage(newMessage.message);
+          setTrigger(Date.now());
+          pushMessageToLocalStorage(newMessage);
         }
       }
     };
@@ -49,10 +63,32 @@ const PoolItem = ({ user, targetUser: _targetUser }) => {
     };
   }, [isConnected]);
 
+  // Save last message to local storage when not connecting to direct message
+  useEffect(() => {
+    if (trigger !== 0 && lastMessage && targetUser.id) {
+      pushLastToPoolInLocalStorage({
+        id: targetUser.id,
+        username: targetUser.username,
+        message: lastMessage.message,
+        timestamp: lastMessage.timestamp
+      });
+    }
+  }, [trigger, lastMessage]);
+
   const resetUnread = () => {
     setUnreadCount(0);
-    updateUnreadCountInLocalStorage(stateUser.id, targetUser.id, 0);
+    resetUnreadCountInLocalStorage(targetUser.id);
   };
+
+  const renderLastMessage = (message) => {
+    if (!message) return '';
+    return message.length > 15 ? message.substring(0, 15) + '...' : message;
+  }
+
+  const renderLastTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    return moment(timestamp).format('LT');
+  }
 
   return (
     <Link
@@ -81,13 +117,13 @@ const PoolItem = ({ user, targetUser: _targetUser }) => {
           <h3 className="font-semibold text-gray-800 truncate font-['Inter',sans-serif]">
             {targetUser.username}
           </h3>
-          <span className="text-sm text-gray-500 font-['Inter',sans-serif] flex-shrink-0 ml-2">
-            {targetUser.timestamp}
+          <span className="text-sm text-gray-500 font-['Inter',sans-serif] flex-shrink-0 ml-2" timestamp={lastMessage && lastMessage.timestamp}>
+            {lastMessage && lastMessage.timestamp ? renderLastTimestamp(lastMessage.timestamp) : ''}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <p className="text-gray-600 text-sm truncate font-['Inter',sans-serif]">
-            {lastMessage}
+            {(lastMessage && lastMessage.message) ? renderLastMessage(lastMessage.message) : ''}
           </p>
           {/* Unread message indicator */}
           {unreadCount > 0 && (
@@ -103,4 +139,4 @@ const PoolItem = ({ user, targetUser: _targetUser }) => {
   );
 };
 
-export default PoolItem;
+export default PoolTarget;

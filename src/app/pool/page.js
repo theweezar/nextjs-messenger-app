@@ -1,10 +1,12 @@
 "use client";
 
-import PoolList from "./PoolList";
+import Pool from "./Pool";
 import PoolWrapper from "./PoolWrapper";
 
-export default function Pool() {
+export default function PoolPage() {
   return (
-    <PoolWrapper Child={PoolList} />
+    <PoolWrapper>
+      <Pool />
+    </PoolWrapper>
   );
 }
