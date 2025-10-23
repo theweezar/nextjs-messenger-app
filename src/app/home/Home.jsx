@@ -1,55 +1,129 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { redirect, RedirectType } from 'next/navigation'
-import { setUserCookie } from "@/app/components/cookie";
 import { v4 as uuidv4 } from 'uuid';
+import { setUserCookie } from "@/app/components/cookie";
+import { useAppContext } from "@/app/AppContext";
+import Modal from "./Modal";
 
 export default function Home() {
   const usernameRef = useRef(null);
+  const { setCtxUser } = useAppContext();
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showUserAgreementModal, setShowUserAgreementModal] = useState(false);
 
   const handleSubmit = () => {
+    if (!usernameRef.current.value.trim()) {
+      alert('Please enter a username');
+      return;
+    }
+    if (!agreedToTerms) {
+      alert('Please agree to the Privacy Policy and User Agreement');
+      return;
+    }
+
     const user = {
       id: uuidv4(),
       username: usernameRef.current.value
     };
     setUserCookie(user);
+    setCtxUser(user);
     redirect('/pool', RedirectType.push);
   };
 
+  const privacyPolicyText = "Your privacy is important to us. We collect minimal information needed to provide messaging functionality and enhance your experience. Your data is never shared with third parties without your consent. We use industry-standard security measures to protect your personal information and communications. You have the right to access, modify, or delete your data at any time. For questions about our privacy practices, please contact our support team.";
+
+  const userAgreementText = "By using this application, you agree to follow our usage guidelines, respect community standards, and not engage in activities that harm the platform or its users. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. We reserve the right to suspend or terminate accounts that violate these terms. The service is provided 'as is' without warranties of any kind.";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white shadow-lg">
-      <div className="rounded-lg p-8">
-        <div className="space-y-2 w-sm">
-          <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-            Username
-          </label>
-          <div className="relative">
-            <input
-              id="username"
-              type="text"
-              name="username"
-              maxLength={10}
-              placeholder="your_username"
-              aria-describedby="username-description"
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              ref={usernameRef}
-            />
-          </div>
-          <p id="username-description" className="text-xs text-gray-500">
-            Create an account using your username.
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">
+            Create Your Account
+          </h1>
+          <p className="text-gray-600">
+            Enter your username to get started
           </p>
-          <div className="flex justify-end">
+        </div>
+
+        {/* Form Section */}
+        <div className="rounded-3xl p-6">
+          <div className="space-y-6">
+            {/* Username Input */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                name="username"
+                maxLength={10}
+                placeholder="your_username"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm transition-all"
+                ref={usernameRef}
+              />
+            </div>
+
+            {/* Agreement Checkbox */}
+            <div className="flex items-start space-x-3">
+              <input
+                id="agreement"
+                type="checkbox"
+                checked={agreedToTerms}
+                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 text-violet-500 border-gray-300 rounded focus:ring-violet-500 focus:ring-2"
+              />
+              <label htmlFor="agreement" className="text-sm text-gray-700 leading-relaxed">
+                I agree to the{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPrivacyModal(true)}
+                  className="text-violet-500 hover:text-violet-600 underline font-medium cursor-pointer"
+                >
+                  Privacy Policy
+                </button>
+                {' '}and{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowUserAgreementModal(true)}
+                  className="text-violet-500 hover:text-violet-600 underline font-medium cursor-pointer"
+                >
+                  User Agreement
+                </button>
+              </label>
+            </div>
+
+            {/* Continue Button */}
             <button
               type="button"
-              className="inline-flex items-center rounded-md bg-blue-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               onClick={handleSubmit}
+              className="cursor-pointer w-full bg-violet-500 hover:bg-violet-600 text-white font-semibold py-3 px-6 rounded-2xl transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2"
             >
-              Submit
+              Continue
             </button>
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <Modal
+        isOpen={showPrivacyModal}
+        onClose={() => setShowPrivacyModal(false)}
+        title="Privacy Policy"
+        content={privacyPolicyText}
+      />
+
+      <Modal
+        isOpen={showUserAgreementModal}
+        onClose={() => setShowUserAgreementModal(false)}
+        title="User Agreement"
+        content={userAgreementText}
+      />
     </div>
   );
 }

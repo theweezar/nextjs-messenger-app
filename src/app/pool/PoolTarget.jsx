@@ -114,7 +114,7 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
       {/* Profile Avatar */}
       <div className="relative flex-shrink-0">
         <div
-          className={`w-12 h-12 rounded-full ${getAvatarColor(targetUser.username)} flex items-center justify-center text-white font-bold font-['Inter',sans-serif]`}
+          className={`w-12 h-12 rounded-full ${getAvatarColor(targetUser.username)} flex items-center justify-center text-white font-bold`}
         >
           {getInitials(targetUser.username)}
         </div>
@@ -127,21 +127,21 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
       {/* Chat Content */}
       <div className="flex-1 ml-4 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <h3 className="font-semibold text-gray-800 truncate font-['Inter',sans-serif]">
+          <h3 className="font-semibold text-gray-800 truncate">
             {targetUser.username}
           </h3>
-          <span className="text-sm text-gray-500 font-['Inter',sans-serif] flex-shrink-0 ml-2" timestamp={lastMessage && lastMessage.timestamp}>
+          <span className="text-sm text-gray-500 flex-shrink-0 ml-2" timestamp={lastMessage && lastMessage.timestamp}>
             {lastMessage && lastMessage.timestamp ? renderLastTimestamp(lastMessage.timestamp) : ''}
           </span>
         </div>
         <div className="flex items-center justify-between">
-          <p className="text-gray-600 text-sm truncate font-['Inter',sans-serif]">
+          <p className="text-gray-600 text-sm truncate">
             {(lastMessage && lastMessage.message) ? renderLastMessage(lastMessage.message) : ''}
           </p>
           {/* Unread message indicator */}
           {unreadCount > 0 && (
             <div className="ml-2 flex-shrink-0">
-              <span className="bg-violet-500 text-white text-xs font-semibold px-1 py-1 rounded-full min-w-[1.25rem] h-5 flex items-center justify-center font-['Inter',sans-serif]">
+              <span className="bg-violet-500 text-white text-xs font-semibold px-1 py-1 rounded-full min-w-[1.25rem] h-5 flex items-center justify-center">
                 {unreadCount > 5 ? '5+' : unreadCount}
               </span>
             </div>

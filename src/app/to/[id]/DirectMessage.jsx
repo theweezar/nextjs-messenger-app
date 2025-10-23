@@ -146,7 +146,7 @@ export default function DirectMessage() {
             <div className="relative">
               <div
                 onClick={() => { console.log(targetUser) }}
-                className={`w-10 h-10 rounded-full ${getAvatarColor(targetUser.username)} flex items-center justify-center text-white font-bold font-['Inter',sans-serif] text-sm`}>
+                className={`w-10 h-10 rounded-full ${getAvatarColor(targetUser.username)} flex items-center justify-center text-white font-bold text-sm`}>
                 {getInitials(targetUser.username)}
               </div>
               {targetUser.online && (
@@ -156,31 +156,29 @@ export default function DirectMessage() {
 
             {/* Contact Name */}
             <div>
-              <h1 className="font-semibold font-['Inter',sans-serif] text-lg">
+              <h1 className="font-semibold text-lg">
                 {targetUser.username}
               </h1>
-              <p className="text-violet-100 text-xs font-['Inter',sans-serif]">
+              <p className="text-violet-100 text-xs">
                 {targetUser.online ? 'Online' : 'Last seen recently'}
               </p>
             </div>
           </div>
 
-          {/* Action Icons */}
-          <div className="flex items-center space-x-2">
-            {/* Call Icon */}
+          {/* Action Icons: Call Icon and Video Call Icon */}
+          {/* <div className="flex items-center space-x-2">
             <button className="p-2 rounded-full hover:bg-violet-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </button>
 
-            {/* Video Call Icon */}
             <button className="p-2 rounded-full hover:bg-violet-600 transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -199,7 +197,7 @@ export default function DirectMessage() {
                 <p className="font-['Inter',sans-serif] text-sm leading-relaxed">
                   {msg.message}
                 </p>
-                <p className={`text-xs mt-1 font-['Inter',sans-serif] ${msg.fromId === stateUser.id ? 'text-gray-500' : 'text-violet-100'
+                <p className={`text-xs mt-1 ${msg.fromId === stateUser.id ? 'text-gray-500' : 'text-violet-100'
                   }`}>
                   {moment(msg.timestamp).format('LT')}
                 </p>
@@ -222,7 +220,7 @@ export default function DirectMessage() {
                 placeholder={targetUser.online ? "Type a message..." : "User is offline..."}
                 disabled={!targetUser.online}
                 name="message"
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent font-['Inter',sans-serif] text-sm"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm"
               />
             </div>
 

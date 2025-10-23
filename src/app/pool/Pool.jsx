@@ -98,18 +98,18 @@ const Pool = () => {
         <div className="flex items-center justify-between">
           <div>
             {stateUser && stateUser.username ? (
-              <h1 className="text-3xl font-bold text-gray-800 font-['Inter',sans-serif]">
+              <h1 className="text-3xl font-bold text-gray-800">
                 Hello, {stateUser.username}
               </h1>
             ) : (
-              <h1 className="text-3xl font-bold text-gray-800 font-['Inter',sans-serif]">
+              <h1 className="text-3xl font-bold text-gray-800">
                 Hello, Guest
               </h1>
             )}
-            <p className="text-sm text-gray-500 mt-1 font-['Inter',sans-serif]">
+            <p className="text-sm text-gray-500 mt-1">
               Connection Status: {isConnected ? "Connected" : "Disconnected"}
             </p>
-            <p className="text-sm text-gray-500 mt-1 font-['Inter',sans-serif]">
+            <p className="text-sm text-gray-500 mt-1">
               Connection Count: {calculatePoolSize(pool)}
             </p>
           </div>

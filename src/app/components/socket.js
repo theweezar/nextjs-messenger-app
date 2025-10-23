@@ -2,6 +2,7 @@ import { io } from "socket.io-client";
 
 if (!globalThis.socket) {
   globalThis.socket = io();
+  console.log("Socket initialized");
 }
 
 export const socket = globalThis.socket;

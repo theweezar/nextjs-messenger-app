@@ -1,6 +1,7 @@
 import "./globals.css";
 import { AppProvider } from "./AppContext";
 import { getServerUserCookie } from "./cookie";
+import { playpenSans } from "./components/fonts";
 
 export const metadata = {
   title: "Messenger App",
@@ -10,12 +11,12 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   let cookieUser = await getServerUserCookie();
 
-  console.log(`[LAYOUT] username=${cookieUser ? cookieUser.username : 'guest'} id=${cookieUser ? cookieUser.id : 'N/A'}`);
+  console.log(`[LAYOUT] username=${cookieUser ? cookieUser.username : "guest"} id=${cookieUser ? cookieUser.id : "N/A"}`);
 
   return (
-    <html lang="en">
+    <html lang="en" >
       <body
-        className="antialiased bg-indigo-50 flex min-h-screen items-center justify-center"
+        className={"antialiased bg-indigo-50 flex min-h-screen items-center justify-center " + playpenSans.className}
       >
         <AppProvider user={cookieUser}>
           <div className="w-full max-w-md space-y-6">
