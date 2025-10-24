@@ -61,6 +61,7 @@ const Pool = () => {
         PoolLog.info("sync:", newPool);
       },
       "pool:add": ({ user, broadcast }) => {
+        PoolLog.info("add user:", flat(user));
         setPool((currPool) => {
           let newPool = new Map(currPool);
           newPool.set(user.id, user);

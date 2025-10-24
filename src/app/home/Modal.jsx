@@ -17,7 +17,7 @@ export default function Modal({ isOpen, onClose, title, content }) {
       ></div>
 
       {/* Modal */}
-      <div className="relative bg-white rounded-3xl mx-4 max-w-md w-full max-h-[80vh] overflow-hidden shadow-xl">
+      <div className="relative bg-white rounded-3xl mx-4 max-w-sm w-full max-h-[80vh] overflow-hidden shadow-xl">
         {/* Header */}
         <div className="bg-violet-500 text-white px-6 py-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">{title}</h3>

@@ -33,9 +33,9 @@ export default function Home() {
     redirect('/pool', RedirectType.push);
   };
 
-  const privacyPolicyText = "Your privacy is important to us. We collect minimal information needed to provide messaging functionality and enhance your experience. Your data is never shared with third parties without your consent. We use industry-standard security measures to protect your personal information and communications. You have the right to access, modify, or delete your data at any time. For questions about our privacy practices, please contact our support team.";
+  const privacyPolicyText = "We only store your username and user ID on our server. Messages and connections will be stored in cookies on your device. Please note that these are not encrypted. We collect minimal information needed to provide messaging functionality and enhance your experience. Your data is never shared with third parties without your consent. You have the right to access, modify, or delete your data at any time. For questions about our privacy practices, please contact our support team.";
 
-  const userAgreementText = "By using this application, you agree to follow our usage guidelines, respect community standards, and not engage in activities that harm the platform or its users. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. We reserve the right to suspend or terminate accounts that violate these terms. The service is provided 'as is' without warranties of any kind.";
+  const userAgreementText = "By using this application, you agree to our policies. We will not be sued under any circumstance. You're on your own. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. The service is provided 'as is' without warranties of any kind.";
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center px-4">
