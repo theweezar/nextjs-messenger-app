@@ -3,13 +3,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { getAvatarColor, getInitials } from '@/app/components/helpers';
-import { ClientLog } from "@/lib/log";
+import { Logger } from "@/lib/log";
 import { socket, emit, on, off } from '@/app/components/socket';
 import { pushMessageToLocalStorage, getMessagesFromLocalStorage, pushLastToPoolInLocalStorage, getLastInPoolFromLocalStorage } from '@/app/components/storage';
 // import { flat } from '@/app/components/object';
 import Message from '../../../../server/models/message';
 import moment from 'moment';
 import Link from 'next/link';
+
+const UserLog = Logger.getLog("USER");
 
 export default function DirectMessage() {
   const params = useParams();
@@ -38,7 +40,7 @@ export default function DirectMessage() {
 
     const socketEvents = {
       "user:connect:done": ({ user }) => {
-        ClientLog.info("init target in DM:", user ? user.username : null);
+        UserLog.info("init target:", user ? user.username : null);
         if (user) {
           setTargetUser({ ...user, online: true });
           return;
@@ -53,7 +55,7 @@ export default function DirectMessage() {
         });
       },
       "user:register:done": ({ user }) => {
-        ClientLog.info("init sender in DM:", user.username);
+        UserLog.info("init sender:", user.username);
         setStateUser(() => ({ ...user }));
       },
       "user:message:receive": (newMessage) => {

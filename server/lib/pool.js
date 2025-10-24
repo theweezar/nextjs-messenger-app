@@ -55,4 +55,18 @@ Pool.prototype.getBySocketId = function (socketId) {
   return this.get(userId);
 };
 
+/**
+ * Get a summary of all users in the pool.
+ * @returns {string} A message containing username, socket ID, and online status for each user.
+ */
+Pool.prototype.summary = function () {
+  const summaries = [];
+  for (const [userId, user] of this.pool.entries()) {
+    summaries.push(
+      `- Username: ${user.username}, Socket ID: ${user.socketId}, Online: ${user.online ? "Yes" : "No"}`
+    );
+  }
+  return summaries.join("\n").trim();
+};
+
 module.exports = new Pool();

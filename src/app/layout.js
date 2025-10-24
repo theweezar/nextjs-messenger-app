@@ -1,5 +1,5 @@
 import "./globals.css";
-import { AppProvider } from "./AppContext";
+import { AppProvider } from "./contexts/AppContext";
 import { getServerUserCookie } from "./cookie";
 import { playpenSans } from "./components/fonts";
 

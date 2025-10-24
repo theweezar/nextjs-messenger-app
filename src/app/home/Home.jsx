@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { redirect, RedirectType } from 'next/navigation'
 import { v4 as uuidv4 } from 'uuid';
 import { setUserCookie } from "@/app/components/cookie";
-import { useAppContext } from "@/app/AppContext";
+import { useAppContext } from "@/app/contexts/AppContext";
 import Modal from "./Modal";
 
 export default function Home() {

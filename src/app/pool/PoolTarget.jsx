@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { socket, on, off } from '@/app/components/socket';
-import { PoolLog } from '@/lib/log';
+import { Logger } from '@/lib/log';
 import { getInitials, getAvatarColor } from "@/app/components/helpers";
 import {
   pushMessageToLocalStorage,
@@ -12,6 +12,8 @@ import {
 } from '@/app/components/storage';
 import Link from "next/link";
 import moment from 'moment';
+
+const MsgLog = Logger.getLog("MESSAGE");
 
 const PoolTarget = ({ targetUser: _targetUser }) => {
   const [isConnected, setIsConnected] = useState(false);
@@ -44,7 +46,7 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
     const socketEvents = {
       "user:message:receive": (newMessage) => {
         if (newMessage.fromId === targetUser.userId) {
-          PoolLog.info("msg receive:", newMessage);
+          MsgLog.info("receive:", newMessage);
           setUnreadCount((count) => count + 1);
           setLastMessage({
             message: newMessage.message,

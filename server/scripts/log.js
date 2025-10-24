@@ -1,16 +1,27 @@
 const chalk = require("chalk");
 
-const PoolLog = {
-  info: (message) => {
-    console.log(chalk.cyan(`[POOL] ${message}`));
+class Log {
+  constructor(category) {
+    this.category = category;
+  }
+
+  info(...args) {
+    console.log(chalk.cyan(`[${this.category}]`, ...args));
+  }
+
+  warn(...args) {
+    console.log(chalk.yellow(`[${this.category}] WARNING:`, ...args));
   }
 }
 
-const ClientLog = {
-  info: (message) => {
-    console.log(chalk.cyan(`[USER] ${message}`));
-  },
-  warn: (message) => {
-    console.log(chalk.yellow(`[USER] ${message}`));
+class Logger extends Log {
+  constructor() {
+    super('');
+  }
+
+  static getLog(category) {
+    return new Log(category);
   }
 }
+
+module.exports = { Log, Logger };

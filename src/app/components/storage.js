@@ -64,6 +64,7 @@ export function pushLastToPoolInLocalStorage(messageObj, read = false) {
   const data = localStorage.getItem(key);
   const item = data ? JSON.parse(data) : {};
   item[messageObj.userId] = {
+    userId: messageObj.userId,
     username: messageObj.username,
     message: messageObj.message,
     timestamp: messageObj.timestamp,
@@ -111,4 +112,11 @@ export function resetUnreadCountInLocalStorage(fromId) {
     item[fromId].unreadCount = 0;
     localStorage.setItem(key, JSON.stringify(item));
   }
+}
+
+/**
+ * Clears all data stored in the app's local storage.
+ */
+export function clearAllAppLocalStorage() {
+  localStorage.clear();
 }

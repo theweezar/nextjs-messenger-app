@@ -11,6 +11,7 @@ const hostname = "localhost";
 const port = 3000;
 const app = next({ dev, hostname, port });
 const handler = app.getRequestHandler();
+const Log = require("./scripts/log").Logger.getLog("SERVER");
 
 app.prepare().then(() => {
   const httpServer = createServer(handler);
@@ -35,12 +36,10 @@ app.prepare().then(() => {
       pool.set(user);
 
       socket.emit("user:register:done", { user });
-      io.emit("pool:add", { user });
-      io.emit("pool:sync", Array.from(pool.pool));
-    });
-
-    socket.on("pool:sync", () => {
       socket.emit("pool:sync", Array.from(pool.pool));
+      io.emit("pool:add", { user });
+      Log.info("emit (user:register:done, pool:sync, pool:add):", user.username);
+      Log.info("Pool summary:\n", pool.summary());
     });
 
     socket.on("user:connect", (userId) => {

@@ -1,14 +1,25 @@
-export const PoolLog = {
-  info: function () {
-    console.log(`[POOL]`, ...arguments);
+class Log {
+  constructor(category) {
+    this.category = category;
+  }
+
+  info(...args) {
+    console.log(`%c[${this.category}]`, 'background: blue; color: white;', ...args);
+  }
+
+  warn(...args) {
+    console.log(`%c[${this.category}] WARNING:`, 'background: orange; color: black;', ...args);
   }
 }
 
-export const ClientLog = {
-  info: function () {
-    console.log(`[USER]`, ...arguments);
-  },
-  warn: function () {
-    console.log(`[USER] WARNING:`, ...arguments);
+class Logger extends Log {
+  constructor() {
+    super('');
+  }
+
+  static getLog(category) {
+    return new Log(category);
   }
 }
+
+export { Log, Logger };

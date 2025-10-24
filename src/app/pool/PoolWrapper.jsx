@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { socket, emit } from '@/app/components/socket';
-import { useAppContext } from "@/app/AppContext";
+import { useAppContext } from "@/app/contexts/AppContext";
 
 export default function PoolWrapper({ children }) {
   const { ctxUser } = useAppContext();
   const [isConnected, setIsConnected] = useState(false);
 
+  // Handle socket connection and user registration
   useEffect(() => {
     setIsConnected(socket.connected);
 
@@ -20,6 +21,19 @@ export default function PoolWrapper({ children }) {
 
     return () => { };
   }, [isConnected]);
+
+  // Handle socket disconnection on page unload
+  useEffect(() => {
+    window.addEventListener("beforeunload", () => {
+      if (socket.connected) {
+        socket.disconnect();
+      }
+    });
+
+    return () => {
+      window.removeEventListener("beforeunload", () => { });
+    };
+  }, []);
 
   return (
     <>
