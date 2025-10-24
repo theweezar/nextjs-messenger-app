@@ -53,7 +53,7 @@ export function getMessagesFromLocalStorage(fromId, toId) {
  * `true`, the unread count is reset to 0.
  *
  * @param {Object} messageObj - The message object to be added or updated in the pool.
- * @param {string} messageObj.id - The unique identifier for the message.
+ * @param {string} messageObj.userId - The unique identifier for the message.
  * @param {string} messageObj.username - The username associated with the message.
  * @param {string} messageObj.message - The content of the message.
  * @param {number} messageObj.timestamp - The timestamp of the message.
@@ -63,14 +63,14 @@ export function pushLastToPoolInLocalStorage(messageObj, read = false) {
   const key = createPoolKey();
   const data = localStorage.getItem(key);
   const item = data ? JSON.parse(data) : {};
-  item[messageObj.id] = {
+  item[messageObj.userId] = {
     username: messageObj.username,
-    lastMessage: messageObj.message,
-    lastTimestamp: messageObj.timestamp,
-    unreadCount: (item[messageObj.id] ? item[messageObj.id].unreadCount : 0) + 1
+    message: messageObj.message,
+    timestamp: messageObj.timestamp,
+    unreadCount: (item[messageObj.userId] ? item[messageObj.userId].unreadCount : 0) + 1
   };
   if (read) {
-    item[messageObj.id].unreadCount = 0;
+    item[messageObj.userId].unreadCount = 0;
   }
   localStorage.setItem(key, JSON.stringify(item));
 }

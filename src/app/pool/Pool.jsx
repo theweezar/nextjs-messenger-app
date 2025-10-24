@@ -1,37 +1,30 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { PoolLog } from "@/scripts/log";
-import { socket, emit, on, off } from '@/app/components/socket';
-import { flat } from '@/app/components/object';
+import { PoolLog } from "@/lib/log";
+import { socket, on, off } from '@/app/components/socket';
 import { getAllLastInPoolFromLocalStorage } from '@/app/components/storage';
 import PoolTarget from "./PoolTarget";
+import User from '../../../server/models/user';
 
 const Pool = () => {
   const [isConnected, setIsConnected] = useState(false);
   const [pool, setPool] = useState(new Map());
   const [stateUser, setStateUser] = useState({});
 
-  const createOfflineTargetUser = (id, obj) => {
-    return {
-      id: id,
-      username: obj.username,
-      online: false,
-      socketId: null
-    };
-  };
-
-  const mergePoolData = (currPool) => {
-    const localPoolData = getAllLastInPoolFromLocalStorage();
+  const mergeLocalPool = (currPool) => {
+    const localPool = getAllLastInPoolFromLocalStorage();
     const mergedPool = new Map(currPool);
 
-    for (const id in localPoolData) {
+    for (const id in localPool) {
       const existing = mergedPool.get(id);
       if (!existing || (existing && !existing.socketId)) {
-        const offlineUser = createOfflineTargetUser(id, localPoolData[id]);
-        mergedPool.set(id, {
-          ...offlineUser
-        });
+        const localObj = localPool[id]
+        const offlineUser = new User({ userId: id, username: localObj.username });
+        offlineUser.message = localObj.message || null;
+        offlineUser.timestamp = localObj.timestamp || null;
+        offlineUser.unreadCount = localObj.unreadCount || 0;
+        mergedPool.set(id, offlineUser);
       }
     }
 
@@ -41,7 +34,7 @@ const Pool = () => {
   const calculatePoolSize = (currPool) => {
     let size = 0;
     for (const [id, user] of currPool) {
-      if (id !== stateUser.id && user.online && user.socketId) {
+      if (id !== stateUser.userId && user.online && user.socketId) {
         size += 1;
       }
     }
@@ -56,33 +49,21 @@ const Pool = () => {
     const socketEvents = {
       "pool:sync": (currPool) => {
         let newPool = new Map(currPool);
-        newPool = mergePoolData(newPool);
+        newPool = mergeLocalPool(newPool);
         setPool(newPool);
-        PoolLog.info("sync:", newPool);
+        PoolLog.info("sync:", newPool.size);
       },
-      "pool:add": ({ user, broadcast }) => {
-        PoolLog.info("add user:", flat(user));
+      "pool:remove": ({ user }) => {
         setPool((currPool) => {
-          let newPool = new Map(currPool);
-          newPool.set(user.id, user);
-          newPool = mergePoolData(newPool);
-          PoolLog.info(broadcast ? "add (broadcast):" : "add (local):", newPool);
-          return newPool;
+          PoolLog.info("remove:", user.username);
+          const newPool = new Map(currPool);
+          newPool.delete(user.userId);
+          return mergeLocalPool(newPool);
         });
       },
-      "pool:remove": (user) => {
-        setPool((currPool) => {
-          let newPool = new Map(currPool);
-          newPool.delete(user.id);
-          newPool = mergePoolData(newPool);
-          PoolLog.info("remove:", newPool);
-          return newPool;
-        });
-      },
-      "user:register:after": (user) => {
-        PoolLog.info("registered:", flat(user));
+      "user:register:done": ({ user }) => {
+        PoolLog.info("user:register:done:", user.username);
         setStateUser(() => ({ ...user }));
-        emit("pool:sync");
       }
     };
 
@@ -119,7 +100,7 @@ const Pool = () => {
       <div className="px-6 py-4">
         <div className="space-y-2">
           {stateUser && [...pool.values()].map((targetUser) => (
-            (targetUser.id !== stateUser.id) && <PoolTarget key={targetUser.id} targetUser={targetUser} />
+            (targetUser.userId !== stateUser.userId) && <PoolTarget key={targetUser.userId} targetUser={targetUser} />
           ))}
         </div>
       </div>

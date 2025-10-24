@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { socket, on, off } from '@/app/components/socket';
-import { PoolLog } from '@/scripts/log';
+import { PoolLog } from '@/lib/log';
 import { getInitials, getAvatarColor } from "@/app/components/helpers";
 import {
   pushMessageToLocalStorage,
@@ -24,12 +24,13 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
 
   // Render last message and unread count on load
   useEffect(() => {
-    if (targetUser.id) {
-      const data = getLastInPoolFromLocalStorage(targetUser.id);
+    if (targetUser.userId) {
+      const data = getLastInPoolFromLocalStorage(targetUser.userId);
+      if (!data) return;
       setUnreadCount(data.unreadCount || 0);
       setLastMessage({
-        message: data.lastMessage || '',
-        timestamp: data.lastTimestamp || null
+        message: data.message || '',
+        timestamp: data.timestamp || null
       });
     }
   }, [targetUser]);
@@ -41,8 +42,8 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
     if (!isConnected) return;
 
     const socketEvents = {
-      "message:receive": (newMessage) => {
-        if (newMessage.fromId === targetUser.id) {
+      "user:message:receive": (newMessage) => {
+        if (newMessage.fromId === targetUser.userId) {
           PoolLog.info("msg receive:", newMessage);
           setUnreadCount((count) => count + 1);
           setLastMessage({
@@ -54,12 +55,12 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
         }
       },
       "pool:add": ({ user }) => {
-        if (user.id === targetUser.id) {
+        if (user.userId === targetUser.userId) {
           setTargetUser({ ...user, online: true });
         }
       },
-      "pool:remove": (user) => {
-        if (user.id === targetUser.id) {
+      "pool:remove": ({ user }) => {
+        if (user.userId === targetUser.userId) {
           setTargetUser((curr) => ({
             ...curr,
             online: false,
@@ -78,9 +79,9 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
 
   // Save last message to local storage when not connecting to direct message
   useEffect(() => {
-    if (trigger !== 0 && lastMessage && targetUser.id) {
+    if (trigger !== 0 && lastMessage && targetUser.userId) {
       pushLastToPoolInLocalStorage({
-        id: targetUser.id,
+        userId: targetUser.userId,
         username: targetUser.username,
         message: lastMessage.message,
         timestamp: lastMessage.timestamp
@@ -90,7 +91,7 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
 
   const resetUnread = () => {
     setUnreadCount(0);
-    resetUnreadCountInLocalStorage(targetUser.id);
+    resetUnreadCountInLocalStorage(targetUser.userId);
   };
 
   const renderLastMessage = (message) => {
@@ -106,9 +107,9 @@ const PoolTarget = ({ targetUser: _targetUser }) => {
   return (
     <Link
       className="flex items-center p-4 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer group"
-      key={targetUser.id}
-      id={targetUser.id}
-      href={`/to/${targetUser.id}`}
+      key={targetUser.userId}
+      id={targetUser.userId}
+      href={`/to/${targetUser.userId}`}
       onClick={resetUnread}
     >
       {/* Profile Avatar */}

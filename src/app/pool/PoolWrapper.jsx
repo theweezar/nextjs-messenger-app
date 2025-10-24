@@ -14,7 +14,7 @@ export default function PoolWrapper({ children }) {
     if (!ctxUser || !isConnected) return;
 
     emit("user:register", {
-      id: ctxUser.id,
+      userId: ctxUser.userId,
       username: ctxUser.username
     });
 

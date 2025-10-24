@@ -11,7 +11,7 @@ export const metadata = {
 export default async function RootLayout({ children }) {
   let cookieUser = await getServerUserCookie();
 
-  console.log(`[LAYOUT] username=${cookieUser ? cookieUser.username : "guest"} id=${cookieUser ? cookieUser.id : "N/A"}`);
+  console.log(`[LAYOUT] username=${cookieUser ? cookieUser.username : "guest"} id=${cookieUser ? cookieUser.userId : "N/A"}`);
 
   return (
     <html lang="en" >

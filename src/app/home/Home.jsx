@@ -25,7 +25,7 @@ export default function Home() {
     }
 
     const user = {
-      id: uuidv4(),
+      userId: uuidv4(),
       username: usernameRef.current.value
     };
     setUserCookie(user);

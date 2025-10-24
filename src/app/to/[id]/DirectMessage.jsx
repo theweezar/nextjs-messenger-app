@@ -3,10 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { getAvatarColor, getInitials } from '@/app/components/helpers';
-import { ClientLog } from "@/scripts/log";
+import { ClientLog } from "@/lib/log";
 import { socket, emit, on, off } from '@/app/components/socket';
 import { pushMessageToLocalStorage, getMessagesFromLocalStorage, pushLastToPoolInLocalStorage, getLastInPoolFromLocalStorage } from '@/app/components/storage';
-import { flat } from '@/app/components/object';
+// import { flat } from '@/app/components/object';
+import Message from '../../../../server/models/message';
 import moment from 'moment';
 import Link from 'next/link';
 
@@ -36,26 +37,26 @@ export default function DirectMessage() {
     if (!isConnected) return;
 
     const socketEvents = {
-      "user:connect:after": ({ user: _targetUser }) => {
-        ClientLog.info("init target in DM:", flat(_targetUser));
-        if (_targetUser) {
-          setTargetUser({ ..._targetUser, online: true });
+      "user:connect:done": ({ user }) => {
+        ClientLog.info("init target in DM:", user ? user.username : null);
+        if (user) {
+          setTargetUser({ ...user, online: true });
           return;
         }
 
-        const offlineData = getLastInPoolFromLocalStorage(params.id);
-        if (offlineData) {
-          setTargetUser({
-            id: params.id,
-            username: offlineData.username
-          });
-        }
+        const userId = params.id;
+        const offlineData = getLastInPoolFromLocalStorage(userId);
+        if (!offlineData) return;
+        setTargetUser({
+          userId: userId,
+          username: offlineData.username
+        });
       },
-      "user:register:after": (user) => {
-        ClientLog.info("init sender in DM:", flat(user));
+      "user:register:done": ({ user }) => {
+        ClientLog.info("init sender in DM:", user.username);
         setStateUser(() => ({ ...user }));
       },
-      "message:receive": (newMessage) => {
+      "user:message:receive": (newMessage) => {
         setMessages((currMsgs) => [...currMsgs, newMessage]);
         pushMessageToLocalStorage(newMessage); // save to receiver's local storage
         setLastMessage({
@@ -63,7 +64,7 @@ export default function DirectMessage() {
           timestamp: newMessage.timestamp
         });
       },
-      "message:send:after": (newMessage) => {
+      "user:message:send:done": (newMessage) => {
         setMessages((currMsgs) => [...currMsgs, newMessage]);
         scrollToBottom();
         pushMessageToLocalStorage(newMessage); // save to sender's local storage
@@ -72,19 +73,19 @@ export default function DirectMessage() {
           timestamp: newMessage.timestamp
         });
       },
-      "pool:remove": (user) => {
-        setTargetUser((prevTarget) => user.id === prevTarget.id
+      "pool:remove": ({ user }) => {
+        setTargetUser((prevTarget) => user.userId === prevTarget.userId
           ? { ...prevTarget, online: false } : prevTarget);
       },
       "pool:add": ({ user }) => {
-        setTargetUser((prevTarget) => user.id === prevTarget.id
+        setTargetUser((prevTarget) => user.userId === prevTarget.userId
           ? { ...user, online: true } : prevTarget);
       }
     }
 
     on(socketEvents);
 
-    emit("user:connect", { id: params.id });
+    emit("user:connect", params.id);
 
     return () => {
       off(socketEvents);
@@ -93,8 +94,8 @@ export default function DirectMessage() {
 
   // Load messages from local storage on component mount
   useEffect(() => {
-    if (stateUser.id && targetUser.id) {
-      const data = getMessagesFromLocalStorage(stateUser.id, targetUser.id);
+    if (stateUser.userId && targetUser.userId) {
+      const data = getMessagesFromLocalStorage(stateUser.userId, targetUser.userId);
       setMessages((currMsgs) => (data && Array.isArray(data.messages)) ? data.messages : currMsgs);
       scrollToBottom();
     }
@@ -102,9 +103,9 @@ export default function DirectMessage() {
 
   // Save last message of both to both sides' pools
   useEffect(() => {
-    if (lastMessage != null && targetUser.id) {
+    if (lastMessage && targetUser.userId) {
       pushLastToPoolInLocalStorage({
-        id: targetUser.id,
+        userId: targetUser.userId,
         username: targetUser.username,
         message: lastMessage.message,
         timestamp: lastMessage.timestamp
@@ -115,13 +116,12 @@ export default function DirectMessage() {
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (messagesRef.current.value.trim()) {
-      const newMessage = {
-        fromId: stateUser.id,
-        toId: targetUser.id,
-        message: messagesRef.current.value,
-        timestamp: Date.now()
-      };
-      emit("message:send", newMessage);
+      const messageInstance = new Message({
+        fromId: stateUser.userId,
+        toId: targetUser.userId,
+        message: messagesRef.current.value.trim(),
+      });
+      emit("user:message:send", messageInstance);
       messagesRef.current.value = '';
     }
   };
@@ -164,21 +164,6 @@ export default function DirectMessage() {
               </p>
             </div>
           </div>
-
-          {/* Action Icons: Call Icon and Video Call Icon */}
-          {/* <div className="flex items-center space-x-2">
-            <button className="p-2 rounded-full hover:bg-violet-600 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </button>
-
-            <button className="p-2 rounded-full hover:bg-violet-600 transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </button>
-          </div> */}
         </div>
       </div>
 
@@ -188,16 +173,16 @@ export default function DirectMessage() {
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`flex ${msg.fromId === stateUser.id ? 'justify-end' : 'justify-start'}`}
+              className={`flex ${msg.fromId === stateUser.userId ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${msg.fromId === stateUser.id
+              <div className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${msg.fromId === stateUser.userId
                 ? 'bg-white text-gray-800 shadow-sm'
                 : 'bg-violet-500 text-white'
                 }`}>
-                <p className="font-['Inter',sans-serif] text-sm leading-relaxed">
+                <p className="text-sm leading-relaxed">
                   {msg.message}
                 </p>
-                <p className={`text-xs mt-1 ${msg.fromId === stateUser.id ? 'text-gray-500' : 'text-violet-100'
+                <p className={`text-xs mt-1 ${msg.fromId === stateUser.userId ? 'text-gray-500' : 'text-violet-100'
                   }`}>
                   {moment(msg.timestamp).format('LT')}
                 </p>
